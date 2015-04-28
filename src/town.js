@@ -1,11 +1,14 @@
 
 var TileSize = 32;
 var PlayerSpeed = 4.0; //tiles per second
+var score=0;
 
 var Tilemap = require('sald:Tilemap.js');
 var sprite = require('sald:Sprite.js'); 
 var col = require('sald:collide.js');
-var GameObject = require('sald:GameObject.js');
+//var GameObject = require('sald:GameObject.js');
+
+//var coin=new GameObject(0,0,20,60);
 
 var heroImg = require('../img/HeroSpriteh.png');
 var heroSprite = new sprite(heroImg, 
@@ -62,8 +65,11 @@ var player = {
 };
 
 var x1,y1,x2,y2,x3,y3;
-var coin1;
+var coin1Rect,coin2Rect,coin3Rect;
+//var coin1=new GameObject(x1,y1,40,44,{ x : 0, y : 0 });
 
+
+//3 functions for 3 coins :)
 function GetRandoms()
 {
 	x1=Math.floor((Math.random() * 20) + (-5));
@@ -73,8 +79,20 @@ function GetRandoms()
 	x3=Math.floor((Math.random() * 20) + (-5));
 	y3=Math.floor((Math.random() * 20) + (-5));
 	console.log(x1+","+y1+" "+x2+","+y2+" "+x3+","+y3);
-	//make each spinning coin a gameobject
-	coin1=new GameObject(x1,y1,40,44.5);
+	
+	//Add bounding boxes to each coin
+	coin1Rect={
+				min:{x: x1-0.4, y: y1-0.4},
+				max:{x: x1+0.4, y: y1+0.4}			
+				};
+	coin2Rect={
+				min:{x: x2-0.4, y: y2-0.4},
+				max:{x: x2+0.4, y: y2+0.4}			
+				};
+	coin3Rect={
+				min:{x: x3-0.4, y: y3-0.4},
+				max:{x: y3+0.4, y: y3+0.4}			
+				};			
 }
 
 	GetRandoms();		//Calling once to get some initial random positions for coins
@@ -101,6 +119,9 @@ function draw() {
 			ctx.factor * (320 / 2 - Math.round(camera.x * TileSize)),
 			ctx.factor * (240 / 2 + Math.round(camera.y * TileSize)) //<-- y is added here because of sign flip
 		);
+
+	var c=document.getElementById('myScore');
+	c.innerHTML=score;
 	
 	//draw tilemap
 	tmap.draw(camera);
@@ -122,8 +143,6 @@ function draw() {
 	coinSprite.draw('spin',x1,y1,0,0.7,0.7,0.5,0.5);	
 	coinSprite.draw('spin',x2,y2,0,0.7,0.7,0.5,0.5);
 	coinSprite.draw('spin',x3,y3,0,0.7,0.7,0.5,0.5);
-
-	
 
 	//Setting collision boxes for houses
 	var house1Rect={
@@ -157,7 +176,22 @@ function draw() {
 				player.y=house1Rect.max.y;
 			}
 			ctx.stroke();
-			
+	
+	if(col.rectangleRectangle(coin1Rect,playerRect)){
+			coin1Rect={
+				min:{x: 0, y: 0},
+				max:{x: 0, y: 0}			
+				};
+			score+=10;
+	}
+	
+	if(col.rectangleRectangle(coin2Rect,playerRect)){
+			score+=10;
+	}
+	
+	if(col.rectangleRectangle(coin3Rect,playerRect)){
+			score+=10;
+	}
 			
 	//rounded corners:
 	ctx.setTransform(ctx.factor,0, 0,ctx.factor, 0,0);
