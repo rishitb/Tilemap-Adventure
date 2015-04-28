@@ -1,23 +1,33 @@
 
 var TileSize = 32;
 var PlayerSpeed = 4.0; //tiles per second
-var Tilemap = require('sald:Tilemap.js');
 
+var Tilemap = require('sald:Tilemap.js');
 var sprite = require('sald:Sprite.js'); 
+var col = require('sald:collide.js');
+var GameObject = require('sald:GameObject.js');
 
 var heroImg = require('../img/HeroSpriteh.png');
-var heroSprite = new sprite(heroImg, { 'walk' : { x:0,y:0, width:20,height:20, size:3 }});
+var heroSprite = new sprite(heroImg, 
+ {'walk' : {
+	  x:0,y:0,
+	  width:20,height:20,
+	  size:3 }
+	  });
+
+var coinsImg=require('../img/coins.png');
+var coinSprite = new sprite(coinsImg, 
+ {'spin' : {
+	  x:0,y:0,
+	  width:40,height:44.5,
+	  size:4 }
+	  });
+
+coinSprite.animators['spin'].loop(true);
+coinSprite.animators['spin'].speed(5);
 heroSprite.animators['walk'].loop(true);
 heroSprite.animators['walk'].speed(20);
 
-var col = require('sald:collide.js');
-//var heroImgs = [
-//	require("../img/hero1.png"),
-//	require("../img/hero2.png"),
-//	require("../img/hero3.png")
-//];
-
-//var tilesImg = require("../img/ground.png");
 var myTilesImg=require("../img/tileset.png");
 
 var mymap=[
@@ -51,6 +61,24 @@ var player = {
 	frame: 0,
 };
 
+var x1,y1,x2,y2,x3,y3;
+var coin1;
+
+function GetRandoms()
+{
+	x1=Math.floor((Math.random() * 20) + (-5));
+	y1=Math.floor((Math.random() * 20) + (-5));
+	x2=Math.floor((Math.random() * 20) + (-5));
+	y2=Math.floor((Math.random() * 20) + (-5));
+	x3=Math.floor((Math.random() * 20) + (-5));
+	y3=Math.floor((Math.random() * 20) + (-5));
+	console.log(x1+","+y1+" "+x2+","+y2+" "+x3+","+y3);
+	//make each spinning coin a gameobject
+	coin1=new GameObject(x1,y1,40,44.5);
+}
+
+	GetRandoms();		//Calling once to get some initial random positions for coins
+
 function draw() {
 	var ctx = window.sald.ctx;
 	//First, clear the screen:
@@ -77,7 +105,7 @@ function draw() {
 	//draw tilemap
 	tmap.draw(camera);
 	
-	//draw player
+	//draw player	
 	heroSprite.draw('walk', player.x,player.y,0,1,1,0.5,0.5);
 	
 	//draw houses
@@ -89,7 +117,15 @@ function draw() {
 		ctx.drawImage(house,0,0,house.width,house.height,10,-12,1,1);
 		ctx.restore();
 	})();
+	
+	//draw coins
+	coinSprite.draw('spin',x1,y1,0,0.7,0.7,0.5,0.5);	
+	coinSprite.draw('spin',x2,y2,0,0.7,0.7,0.5,0.5);
+	coinSprite.draw('spin',x3,y3,0,0.7,0.7,0.5,0.5);
 
+	
+
+	//Setting collision boxes for houses
 	var house1Rect={
 				min:{x: 0, y: 12},
 				max:{x: 1, y: 13}
@@ -104,6 +140,7 @@ function draw() {
 		min:{x:player.x,y:player.y},
 		max:{x:player.x+(0.5),y:player.y+(0.5)}
 	};
+	
 					
 	if (col.rectangleRectangle(house1Rect, playerRect)) {	//Check player collision with house1
 				ctx.strokeStyle = '#fff';
@@ -136,8 +173,6 @@ function draw() {
 
 	ctx.fillRect(319,238, 1,2);
 	ctx.fillRect(318,239, 1,1);
-	
-
 }
 
 function update(elapsed) {
@@ -148,13 +183,13 @@ function update(elapsed) {
 	
 	var keys=window.sald.keys;
 	//Movement
-	if (keys['LEFT']) command.x -= 1.0;
+	if (keys['LEFT'])command.x -= 1.0;
 	if (keys['RIGHT']) command.x += 1.0;
 	if (keys['DOWN']) command.y -= 1.0;
 	if (keys['UP']) command.y += 1.0;
 	
 	if (command.x != 0.0 || command.y != 0.0) {
-		
+		heroSprite.draw('walk', player.x,player.y,0,1,1,0.5,0.5);
 		var len = Math.sqrt(command.x * command.x + command.y * command.y);
 		command.x /= len;
 		command.y /= len;
@@ -165,9 +200,10 @@ function update(elapsed) {
 		//alternate player frames 1 and 2 if walking:
 		player.frameAcc = (player.frameAcc + (elapsed * PlayerSpeed) / 0.3) % 2; 
 		player.frame = 1 + Math.floor(player.frameAcc);
+		
 	} else {
 		//player is stopped:
-		player.frame = 0;
+		//heroSprite.draw('idle', player.x,player.y,0,1,1,0.5,0.5);
 		heroSprite.animators['walk'].stop();
 	}
 
@@ -182,7 +218,6 @@ function update(elapsed) {
 function key(key, state) {
 	//don't do anything
 }
-
 
 module.exports = {
 	draw:draw,
