@@ -2,13 +2,18 @@
 var TileSize = 32;
 var PlayerSpeed = 4.0; //tiles per second
 var score=0;
+var seconds = 30;
+var remainingSeconds;
 
 var Tilemap = require('sald:Tilemap.js');
 var sprite = require('sald:Sprite.js'); 
 var col = require('sald:collide.js');
+var soundController = require('sald:soundController.js');
 //var GameObject = require('sald:GameObject.js');
 
 //var coin=new GameObject(0,0,20,60);
+
+var coinSound=require('../sounds/8-bit-coin.ogg');
 
 var heroImg = require('../img/HeroSpriteh.png');
 var heroSprite = new sprite(heroImg, 
@@ -69,33 +74,62 @@ var coin1Rect,coin2Rect,coin3Rect;
 //var coin1=new GameObject(x1,y1,40,44,{ x : 0, y : 0 });
 
 
-//3 functions for 3 coins :)
-function GetRandoms()
+//Randomise Coins
+function GetRandomCoin1()
 {
 	x1=Math.floor((Math.random() * 20) + (-5));
 	y1=Math.floor((Math.random() * 20) + (-5));
-	x2=Math.floor((Math.random() * 20) + (-5));
-	y2=Math.floor((Math.random() * 20) + (-5));
-	x3=Math.floor((Math.random() * 20) + (-5));
-	y3=Math.floor((Math.random() * 20) + (-5));
-	console.log(x1+","+y1+" "+x2+","+y2+" "+x3+","+y3);
-	
 	//Add bounding boxes to each coin
 	coin1Rect={
 				min:{x: x1-0.4, y: y1-0.4},
 				max:{x: x1+0.4, y: y1+0.4}			
 				};
+			console.log(x1+","+y1);
+}
+
+function GetRandomCoin2()
+{
+	x2=Math.floor((Math.random() * 20) + (-5));
+	y2=Math.floor((Math.random() * 20) + (-5));
 	coin2Rect={
 				min:{x: x2-0.4, y: y2-0.4},
 				max:{x: x2+0.4, y: y2+0.4}			
 				};
+				console.log(x2+","+y2);
+}
+
+function GetRandomCoin3()
+{
+	x3=Math.floor((Math.random() * 20) + (-5));
+	y3=Math.floor((Math.random() * 20) + (-5));
 	coin3Rect={
 				min:{x: x3-0.4, y: y3-0.4},
 				max:{x: y3+0.4, y: y3+0.4}			
-				};			
+				};
+				console.log(x3+","+y3);		
 }
 
-	GetRandoms();		//Calling once to get some initial random positions for coins
+			GetRandomCoin1();
+			GetRandomCoin2();
+			GetRandomCoin3();		//Calling once to get some initial random positions for coins
+			
+function secondsPassed() {
+    	if (seconds < 10) {
+       		 seconds = "0" + seconds;  
+   		 }
+		 
+   	 	if (seconds == 0) {
+      	  clearInterval(countdownTimer);
+		  alert("ITS OVER! Your Score: "+score);
+		  close();
+    	} else {
+        	seconds--;
+   	 		}
+		console.log("Sec: "+seconds);
+	}
+ 
+	var countdownTimer=setInterval(secondsPassed, 1000);
+		
 
 function draw() {
 	var ctx = window.sald.ctx;
@@ -119,9 +153,6 @@ function draw() {
 			ctx.factor * (320 / 2 - Math.round(camera.x * TileSize)),
 			ctx.factor * (240 / 2 + Math.round(camera.y * TileSize)) //<-- y is added here because of sign flip
 		);
-
-	var c=document.getElementById('myScore');
-	c.innerHTML=score;
 	
 	//draw tilemap
 	tmap.draw(camera);
@@ -144,6 +175,28 @@ function draw() {
 	coinSprite.draw('spin',x2,y2,0,0.7,0.7,0.5,0.5);
 	coinSprite.draw('spin',x3,y3,0,0.7,0.7,0.5,0.5);
 
+	//Display Score
+	(function ShowScore()
+	{
+		ctx.save();
+		ctx.transform(1,0, 0,-1,0,0);
+		ctx.font="1px Arial";
+		ctx.fillStyle = "rgb(255,255,100)"; 
+		ctx.fillText(score,camera.x+3.5,-camera.y-(2.5),1);
+		ctx.restore();
+	})();
+	
+	//Countdown Timer
+	(function Timer()
+	{
+		ctx.save();
+		ctx.transform(1,0, 0,-1,0,0);
+		ctx.font="1px Arial";
+		ctx.fillStyle = "rgb(255,0,0)";
+		ctx.fillText(seconds,camera.x,-camera.y+3.5,1); 
+		ctx.restore();
+	})();
+	
 	//Setting collision boxes for houses
 	var house1Rect={
 				min:{x: 0, y: 12},
@@ -178,18 +231,23 @@ function draw() {
 			ctx.stroke();
 	
 	if(col.rectangleRectangle(coin1Rect,playerRect)){
-			coin1Rect={
-				min:{x: 0, y: 0},
-				max:{x: 0, y: 0}			
-				};
+			console.log("Pickup 1");
+			GetRandomCoin1();
+			coinSound.play();
 			score+=10;
 	}
 	
 	if(col.rectangleRectangle(coin2Rect,playerRect)){
+			console.log("Pickup 2");
+			coinSound.play();
+			GetRandomCoin2();
 			score+=10;
 	}
 	
 	if(col.rectangleRectangle(coin3Rect,playerRect)){
+			console.log("Pickup 3");
+			coinSound.play();
+			GetRandomCoin3();
 			score+=10;
 	}
 			
@@ -246,7 +304,6 @@ function update(elapsed) {
 	camera.x = Math.min(camera.x, player.x + (320 / TileSize / 2 - 3));
 	camera.y = Math.max(camera.y, player.y - (240 / TileSize / 2 - 3));
 	camera.y = Math.min(camera.y, player.y + (240 / TileSize / 2 - 3));
-	
 }
 
 function key(key, state) {

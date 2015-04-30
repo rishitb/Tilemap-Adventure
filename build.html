@@ -427,13 +427,18 @@ var mods = {
     var TileSize = 32;
     var PlayerSpeed = 4.0; //tiles per second
     var score=0;
+    var seconds = 30;
+    var remainingSeconds;
     
     var Tilemap = require('C:\Users\rishitb\Desktop\sald\sald\Tilemap.js');
     var sprite = require('C:\Users\rishitb\Desktop\sald\sald\Sprite.js'); 
     var col = require('C:\Users\rishitb\Desktop\sald\sald\collide.js');
+    var soundController = require('C:\Users\rishitb\Desktop\sald\sald\soundController.js');
     //var GameObject = require('C:\Users\rishitb\Desktop\sald\sald\GameObject.js');
     
     //var coin=new GameObject(0,0,20,60);
+    
+    var coinSound=require('sounds\8-bit-coin.ogg');
     
     var heroImg = require('img\HeroSpriteh.png');
     var heroSprite = new sprite(heroImg, 
@@ -493,32 +498,63 @@ var mods = {
     var coin1Rect,coin2Rect,coin3Rect;
     //var coin1=new GameObject(x1,y1,40,44,{ x : 0, y : 0 });
     
-    function GetRandoms()
+    
+    //Randomise Coins
+    function GetRandomCoin1()
     {
     	x1=Math.floor((Math.random() * 20) + (-5));
     	y1=Math.floor((Math.random() * 20) + (-5));
-    	x2=Math.floor((Math.random() * 20) + (-5));
-    	y2=Math.floor((Math.random() * 20) + (-5));
-    	x3=Math.floor((Math.random() * 20) + (-5));
-    	y3=Math.floor((Math.random() * 20) + (-5));
-    	console.log(x1+","+y1+" "+x2+","+y2+" "+x3+","+y3);
-    	
     	//Add bounding boxes to each coin
     	coin1Rect={
     				min:{x: x1-0.4, y: y1-0.4},
     				max:{x: x1+0.4, y: y1+0.4}			
     				};
+    			console.log(x1+","+y1);
+    }
+    
+    function GetRandomCoin2()
+    {
+    	x2=Math.floor((Math.random() * 20) + (-5));
+    	y2=Math.floor((Math.random() * 20) + (-5));
     	coin2Rect={
     				min:{x: x2-0.4, y: y2-0.4},
     				max:{x: x2+0.4, y: y2+0.4}			
     				};
+    				console.log(x2+","+y2);
+    }
+    
+    function GetRandomCoin3()
+    {
+    	x3=Math.floor((Math.random() * 20) + (-5));
+    	y3=Math.floor((Math.random() * 20) + (-5));
     	coin3Rect={
     				min:{x: x3-0.4, y: y3-0.4},
     				max:{x: y3+0.4, y: y3+0.4}			
-    				};			
+    				};
+    				console.log(x3+","+y3);		
     }
     
-    	GetRandoms();		//Calling once to get some initial random positions for coins
+    			GetRandomCoin1();
+    			GetRandomCoin2();
+    			GetRandomCoin3();		//Calling once to get some initial random positions for coins
+    			
+    function secondsPassed() {
+        	if (seconds < 10) {
+           		 seconds = "0" + seconds;  
+       		 }
+    		 
+       	 	if (seconds == 0) {
+          	  clearInterval(countdownTimer);
+    		  alert("ITS OVER! Your Score: "+score);
+    		  close();
+        	} else {
+            	seconds--;
+       	 		}
+    		console.log("Sec: "+seconds);
+    	}
+     
+    	var countdownTimer=setInterval(secondsPassed, 1000);
+    		
     
     function draw() {
     	var ctx = window.sald.ctx;
@@ -542,9 +578,6 @@ var mods = {
     			ctx.factor * (320 / 2 - Math.round(camera.x * TileSize)),
     			ctx.factor * (240 / 2 + Math.round(camera.y * TileSize)) //<-- y is added here because of sign flip
     		);
-    
-    	var c=document.getElementById('myScore');
-    	c.innerHTML=score;
     	
     	//draw tilemap
     	tmap.draw(camera);
@@ -567,6 +600,28 @@ var mods = {
     	coinSprite.draw('spin',x2,y2,0,0.7,0.7,0.5,0.5);
     	coinSprite.draw('spin',x3,y3,0,0.7,0.7,0.5,0.5);
     
+    	//Display Score
+    	(function ShowScore()
+    	{
+    		ctx.save();
+    		ctx.transform(1,0, 0,-1,0,0);
+    		ctx.font="1px Arial";
+    		ctx.fillStyle = "rgb(255,255,100)"; 
+    		ctx.fillText(score,camera.x+3.5,-camera.y-(2.5),1);
+    		ctx.restore();
+    	})();
+    	
+    	//Countdown Timer
+    	(function Timer()
+    	{
+    		ctx.save();
+    		ctx.transform(1,0, 0,-1,0,0);
+    		ctx.font="1px Arial";
+    		ctx.fillStyle = "rgb(255,0,0)";
+    		ctx.fillText(seconds,camera.x,-camera.y+3.5,1); 
+    		ctx.restore();
+    	})();
+    	
     	//Setting collision boxes for houses
     	var house1Rect={
     				min:{x: 0, y: 12},
@@ -601,18 +656,23 @@ var mods = {
     			ctx.stroke();
     	
     	if(col.rectangleRectangle(coin1Rect,playerRect)){
-    			coin1Rect={
-    				min:{x: 0, y: 0},
-    				max:{x: 0, y: 0}			
-    				};
+    			console.log("Pickup 1");
+    			GetRandomCoin1();
+    			coinSound.play();
     			score+=10;
     	}
     	
     	if(col.rectangleRectangle(coin2Rect,playerRect)){
+    			console.log("Pickup 2");
+    			coinSound.play();
+    			GetRandomCoin2();
     			score+=10;
     	}
     	
     	if(col.rectangleRectangle(coin3Rect,playerRect)){
+    			console.log("Pickup 3");
+    			coinSound.play();
+    			GetRandomCoin3();
     			score+=10;
     	}
     			
@@ -669,7 +729,6 @@ var mods = {
     	camera.x = Math.min(camera.x, player.x + (320 / TileSize / 2 - 3));
     	camera.y = Math.max(camera.y, player.y - (240 / TileSize / 2 - 3));
     	camera.y = Math.min(camera.y, player.y + (240 / TileSize / 2 - 3));
-    	
     }
     
     function key(key, state) {
@@ -1422,6 +1481,388 @@ var mods = {
         circleConvex: circleConvex,
         convertRectToConvex:convertRectToConvex,
     };},
+  'C:\Users\rishitb\Desktop\sald\sald\soundController.js' : function(module) {
+    var masterVolume = 1.0;
+    var musicVolume = 1.0;
+    var soundEffectVolume = 1.0;
+    
+    var isMuted_ = false;
+    var isPaused_ = false;
+    var unmutedMasterVolume = masterVolume;
+    
+    var playingSFX = new Set();
+    var playingMusic = new Set();
+    
+    var isMuted = function(){
+    	return isMuted_;
+    }
+    
+    var updateLiveSounds = function(func){
+    	var replaceSet = new Set();
+    
+    	playingSFX.forEach(function(audio) {
+    		if (!audio.ended){
+    			func(audio);
+    			replaceSet.add(audio);
+    		}
+    	});
+    
+    	playingSFX = replaceSet;
+    
+    	replaceSet = new Set();
+    
+    	playingMusic.forEach(function(audio) {
+    		if (!audio.ended){
+    			func(audio);
+    			replaceSet.add(audio);
+    		}
+    	});
+    
+    	playingMusic = replaceSet;
+    }
+    
+    var removeInactiveSFX = function (){
+    	var replaceSet = new Set();
+    
+    	// Remove sounds that aren't being played
+    	playingSFX.forEach(function(sound) {
+    		if (!sound.ended){
+    			replaceSet.add(sound);
+    		}
+    	});
+    
+    	playingSFX = replaceSet;
+    }
+    
+    var pause = function(){
+    	isPaused_ = true;
+    
+    	var func = function(audio){
+    		audio.pause();
+    	}
+    
+    	updateLiveSounds(func);
+    }
+    
+    var resume = function(){
+    	isPaused_ = false;
+    
+    	var func = function(audio){
+    		audio.play();
+    	}
+    
+    	updateLiveSounds(func);
+    }
+    
+    var isPaused = function(){
+    	return isPaused_;
+    }
+    
+    var removeInactiveMusic = function (){
+    	var replaceSet = new Set();
+    
+    	// Remove sounds that aren't being played
+    	playingMusic.forEach(function(sound) {
+    		if (!sound.ended){
+    			replaceSet.add(sound);
+    		}
+    	});
+    
+    	playingMusic = replaceSet;
+    }
+    
+    var setCurrentVolume = function(volume_){
+    	volume = Math.max(0, Math.min(1, volume_));
+    
+    	var replaceSet = new Set();
+    
+    	// Remove sounds that aren't being played
+    	playingSFX.forEach(function(sound) {
+    		if (!sound.ended){
+    			sound.volume = volume;
+    
+    			replaceSet.add(sound);
+    		}
+    	});
+    
+    	playingSFX = replaceSet;
+    
+    	replaceSet = new Set();
+    
+    	// Remove sounds that aren't being played
+    	playingMusic.forEach(function(sound) {
+    		if (!sound.ended){
+    			sound.volume = volume;
+    
+    			replaceSet.add(sound);
+    		}
+    	});
+    
+    	playingMusic = replaceSet;
+    }
+    
+    var setMasterVolume = function(volume_){
+    	unmutedMasterVolume = Math.max(0, Math.min(1, volume_));
+    
+    	setCurrentVolume(unmutedMasterVolume);
+    }
+    
+    var getMasterVolume = function() {
+    	return masterVolume;
+    }
+    
+    var setSoundEffectVolume = function(volume_){
+    	soundEffectVolume = Math.max(0, Math.min(1, volume_));
+    }
+    
+    var getSoundEffectVolume = function() {
+    	return soundEffectVolume;
+    }
+    
+    var setMusicVolume = function(volume_){
+    	musicVolume = Math.max(0, Math.min(1, volume_));
+    }
+    
+    var getMusicVolume = function() {
+    	return masterVolume;
+    }
+    
+    var mute = function(){
+    	isMuted_ = true;
+    	setCurrentVolume(0);
+    }
+    
+    var unmute = function(){
+    	isMuted_ = false;
+    	setCurrentVolume(unmutedMasterVolume);
+    }
+    
+    var sfxAddedTicker = 0;
+    var musicAddedTicker = 0;
+    
+    var addPlayingInstance = function(audio){
+    	if (audio.isMusic){
+    		playingMusic.add(audio);
+    
+    		musicAddedTicker++;
+    
+    		if (musicAddedTicker > 32){
+    			removeInactiveMusic();
+    			musicAddedTicker = 0;
+    		}
+    	} else {
+    		playingSFX.add(audio);
+    
+    		sfxAddedTicker++;
+    
+    		if (sfxAddedTicker > 32){
+    			removeInactiveSFX();
+    			sfxAddedTicker = 0;
+    		}
+    	}
+    }
+    
+    
+    
+    var SaldAudio = function (audioParamString){
+    	// Private Variables/Functions
+    	var instances = [];
+    	var liveInstances = new Set();
+    	var DEFAULT_NUM_INSTANCES = 4;
+    	var nextSound = -1;
+    	var isPaused_ = false;
+    	var isMusic = false;
+    
+    	var loops = false;
+    
+    	var volume = 1.0;
+    
+    	// Accounts for Master and Music or Sound Effect
+    	var getModifiedVolume = function(){
+    		var vol = volume * getMasterVolume();
+    
+    		if (isMusic){
+    			vol *= getMusicVolume();
+    		} else {
+    			vol *= getSoundEffectVolume();
+    		}
+    
+    		return vol;
+    	}
+    
+    	var updateLiveInstances = function(func){
+    		var replaceSet = new Set();
+    
+    		if (func === undefined){
+    			liveInstances.forEach(function(audio) {
+    				if (!audio.ended){
+    					replaceSet.add(audio);
+    				}
+    			});
+    		} else {
+    			liveInstances.forEach(function(audio) {
+    				if (!audio.ended){
+    					func(audio);
+    					replaceSet.add(audio);
+    				}
+    			});
+    		}
+    
+    		liveInstances = replaceSet;
+    	}
+    
+    	var addInstance = function(){
+    		var temp = new Audio(audioParamString);
+    
+    		instances.push(temp);
+    	}
+    
+    	for (var i = 0; i < DEFAULT_NUM_INSTANCES; i++){
+    		addInstance();
+    	}
+    
+    	// Public Variables/Functions
+    
+    	/* This is used to control the number of instances of
+    	 the sound file that can be playing at the same time */
+    	this.setNumInstances = function(num){
+    		if (numInstances < 0){
+    			return false;
+    		} else if (num < instances.length){
+    			var toRemove = instances.length - num;
+    
+    			for (var i = 0; i < toRemove; i++){
+    				instances[i].pause();
+    			}
+    
+    			instances.splice(toRemove, 1);
+    		} else {
+    			for (var i = instances.length; i < num; i++){
+    				addInstance();
+    			}
+    		}
+    	}
+    
+    	this.getVolume = function(){
+    		return volume;
+    	}
+    
+    	this.setVolume = function(vol){
+    		volume = Math.max(0, Math.min(1, vol));
+    
+    		var setVol = function(audio){
+    			audio.volume = getModifiedVolume();
+    		}
+    
+    		updateLiveInstances(setVol);
+    	}
+    
+    	// Plays a new instance of this sound, does not resume paused sound
+    	this.play = function(){
+    		if (instances.length > 0 && !isPaused() && !isMuted()){
+    			nextSound = (nextSound + 1) % instances.length;
+    
+    			audio = instances[nextSound];
+    
+    			addPlayingInstance(audio);
+    
+    			audio.gain = volume;
+    
+    			var vol = getModifiedVolume();
+    
+    			audio.volume = vol;
+    			audio.currentTime = 0;
+    			audio.play();
+    			audio.loop = loops;
+    			liveInstances.add(audio);
+    		}
+    	}
+    
+    	this.setShouldLoop = function(bool){
+    		loops = bool;
+    
+    		var setLoop = function(audio){
+    			audio.loop = loops;
+    		}
+    
+    		updateLiveInstances(setLoop);
+    	}
+    
+    	this.doesLoop = function(){
+    		return loops;
+    	}
+    
+    	this.getNumberOfLiveInstances = function(){
+    		updateLiveInstances();
+    		return liveInstances.size;
+    	}
+    
+    	this.pause = function(){
+    		isPaused_ = true;
+    		if (!isPaused()){
+    			var pause = function(audio){
+    				audio.pause();
+    			}
+    
+    			updateLiveInstances(pause);
+    		}
+    	}
+    
+    	this.resume = function(){
+    		isPaused_ = false;
+    		if (!isPaused()){
+    			var resume = function(audio){
+    				audio.play();
+    			}
+    
+    			updateLiveInstances(resume);
+    		}
+    	}
+    
+    	this.isPaused = function(){
+    		return isPaused_;
+    	}
+    
+    	// Stops all instances of this sound from playing
+    	this.stop = function(){
+    		liveInstances.forEach(function(audio) {
+    			audio.pause();
+    			audio.currentTime = 0;
+    		});
+    
+    		liveInstances.clear();
+    	}
+    
+    	this.setIsMusic = function(boolean){
+    		isMusic = boolean;
+    	}
+    
+    	this.isMusic = function(){
+    		return isMusic;
+    	}
+    }
+    
+    module.exports = {
+    	setMasterVolume:setMasterVolume,
+    	getMasterVolume:getMasterVolume,
+    
+    	setSoundEffectVolume:setSoundEffectVolume,
+    	getSoundEffectVolume:getSoundEffectVolume,
+    
+    	setMusicVolume:setMusicVolume,
+    	getMusicVolume:getMusicVolume,
+    
+    	pause:pause,
+    	resume:resume,
+    	isPaused:isPaused,
+    	mute:mute,
+    	unmute:unmute,
+    	isMuted:isMuted,
+    
+    	SaldAudio:SaldAudio
+    };},
+  'sounds\8-bit-coin.ogg' : function(module) {
+    module.exports = new Audio("data:audio/ogg;base64,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");},
   'img\HeroSpriteh.png' : function(module) {
     var img = new Image();
     img.src = "data:image/png;base64,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/GMzLdsAADoyaVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8P3hwYWNrZXQgYmVnaW49Iu+7vyIgaWQ9Ilc1TTBNcENlaGlIenJlU3pOVGN6a2M5ZCI/Pgo8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJBZG9iZSBYTVAgQ29yZSA1LjYtYzAxNCA3OS4xNTY3OTcsIDIwMTQvMDgvMjAtMDk6NTM6MDIgICAgICAgICI+CiAgIDxyZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyI+CiAgICAgIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICAgICAgICAgIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIKICAgICAgICAgICAgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iCiAgICAgICAgICAgIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiCiAgICAgICAgICAgIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIKICAgICAgICAgICAgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyIKICAgICAgICAgICAgeG1sbnM6ZXhpZj0iaHR0cDovL25zLmFkb2JlLmNvbS9leGlmLzEuMC8iPgogICAgICAgICA8eG1wOkNyZWF0b3JUb29sPkFkb2JlIFBob3Rvc2hvcCBDQyAyMDE0IChXaW5kb3dzKTwveG1wOkNyZWF0b3JUb29sPgogICAgICAgICA8eG1wOkNyZWF0ZURhdGU+MjAxNS0wMS0zMFQwOTo0ODoxNC0wNTowMDwveG1wOkNyZWF0ZURhdGU+CiAgICAgICAgIDx4bXA6TWV0YWRhdGFEYXRlPjIwMTUtMDEtMzBUMDk6NDg6MTQtMDU6MDA8L3htcDpNZXRhZGF0YURhdGU+CiAgICAgICAgIDx4bXA6TW9kaWZ5RGF0ZT4yMDE1LTAxLTMwVDA5OjQ4OjE0LTA1OjAwPC94bXA6TW9kaWZ5RGF0ZT4KICAgICAgICAgPHhtcE1NOkluc3RhbmNlSUQ+eG1wLmlpZDphYmE3MTY3Ni1lOGJiLTg0NDMtYTZhMi03Mjg2ODVhMjdkMGM8L3htcE1NOkluc3RhbmNlSUQ+CiAgICAgICAgIDx4bXBNTTpEb2N1bWVudElEPmFkb2JlOmRvY2lkOnBob3Rvc2hvcDpmZjQ3OTc0ZS1hODhlLTExZTQtODg0MC1iZjljMjc2YWUyNGI8L3htcE1NOkRvY3VtZW50SUQ+CiAgICAgICAgIDx4bXBNTTpPcmlnaW5hbERvY3VtZW50SUQ+eG1wLmRpZDo1NmU5YWNmOS0zODM4LTYzNGItOTU0Yi1jYTVjZjZjMGIwZjc8L3htcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD4KICAgICAgICAgPHhtcE1NOkhpc3Rvcnk+CiAgICAgICAgICAgIDxyZGY6U2VxPgogICAgICAgICAgICAgICA8cmRmOmxpIHJkZjpwYXJzZVR5cGU9IlJlc291cmNlIj4KICAgICAgICAgICAgICAgICAgPHN0RXZ0OmFjdGlvbj5jcmVhdGVkPC9zdEV2dDphY3Rpb24+CiAgICAgICAgICAgICAgICAgIDxzdEV2dDppbnN0YW5jZUlEPnhtcC5paWQ6NTZlOWFjZjktMzgzOC02MzRiLTk1NGItY2E1Y2Y2YzBiMGY3PC9zdEV2dDppbnN0YW5jZUlEPgogICAgICAgICAgICAgICAgICA8c3RFdnQ6d2hlbj4yMDE1LTAxLTMwVDA5OjQ4OjE0LTA1OjAwPC9zdEV2dDp3aGVuPgogICAgICAgICAgICAgICAgICA8c3RFdnQ6c29mdHdhcmVBZ2VudD5BZG9iZSBQaG90b3Nob3AgQ0MgMjAxNCAoV2luZG93cyk8L3N0RXZ0OnNvZnR3YXJlQWdlbnQ+CiAgICAgICAgICAgICAgIDwvcmRmOmxpPgogICAgICAgICAgICAgICA8cmRmOmxpIHJkZjpwYXJzZVR5cGU9IlJlc291cmNlIj4KICAgICAgICAgICAgICAgICAgPHN0RXZ0OmFjdGlvbj5zYXZlZDwvc3RFdnQ6YWN0aW9uPgogICAgICAgICAgICAgICAgICA8c3RFdnQ6aW5zdGFuY2VJRD54bXAuaWlkOmFiYTcxNjc2LWU4YmItODQ0My1hNmEyLTcyODY4NWEyN2QwYzwvc3RFdnQ6aW5zdGFuY2VJRD4KICAgICAgICAgICAgICAgICAgPHN0RXZ0OndoZW4+MjAxNS0wMS0zMFQwOTo0ODoxNC0wNTowMDwvc3RFdnQ6d2hlbj4KICAgICAgICAgICAgICAgICAgPHN0RXZ0OnNvZnR3YXJlQWdlbnQ+QWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKFdpbmRvd3MpPC9zdEV2dDpzb2Z0d2FyZUFnZW50PgogICAgICAgICAgICAgICAgICA8c3RFdnQ6Y2hhbmdlZD4vPC9zdEV2dDpjaGFuZ2VkPgogICAgICAgICAgICAgICA8L3JkZjpsaT4KICAgICAgICAgICAgPC9yZGY6U2VxPgogICAgICAgICA8L3htcE1NOkhpc3Rvcnk+CiAgICAgICAgIDxkYzpmb3JtYXQ+aW1hZ2UvcG5nPC9kYzpmb3JtYXQ+CiAgICAgICAgIDxwaG90b3Nob3A6Q29sb3JNb2RlPjM8L3Bob3Rvc2hvcDpDb2xvck1vZGU+CiAgICAgICAgIDxwaG90b3Nob3A6SUNDUHJvZmlsZT5zUkdCIElFQzYxOTY2LTIuMTwvcGhvdG9zaG9wOklDQ1Byb2ZpbGU+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDx0aWZmOlhSZXNvbHV0aW9uPjMwMDAwMDAvMTAwMDA8L3RpZmY6WFJlc29sdXRpb24+CiAgICAgICAgIDx0aWZmOllSZXNvbHV0aW9uPjMwMDAwMDAvMTAwMDA8L3RpZmY6WVJlc29sdXRpb24+CiAgICAgICAgIDx0aWZmOlJlc29sdXRpb25Vbml0PjI8L3RpZmY6UmVzb2x1dGlvblVuaXQ+CiAgICAgICAgIDxleGlmOkNvbG9yU3BhY2U+MTwvZXhpZjpDb2xvclNwYWNlPgogICAgICAgICA8ZXhpZjpQaXhlbFhEaW1lbnNpb24+NjA8L2V4aWY6UGl4ZWxYRGltZW5zaW9uPgogICAgICAgICA8ZXhpZjpQaXhlbFlEaW1lbnNpb24+MjA8L2V4aWY6UGl4ZWxZRGltZW5zaW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAKPD94cGFja2V0IGVuZD0idyI/PvebnYwAAAAgY0hSTQAAeiUAAICDAAD5/wAAgOkAAHUwAADqYAAAOpgAABdvkl/FRgAAARxJREFUeNrsmL0OgjAQx6+mCSuv4eLABnHQ3Qfoe/gcvocP4M5ijq2DC6/RlcSkDnCx1EJKaEwV/lO5Nr+76/UDYFprWJI2sDAxamT7fFap5b1i5nOsPE6wbXadOXdCEzRmHgsDa1VLAQAAMfMWt4fXhNeE14R/W7w9+sXsk7qWwrg74+Ut7sWDjQ2iO9q8D/szP00x8L62h+dWKJQvDgCwO51zZ69Cp3lo/ON2qbr+Q2dqAAC4Qhzbgx487/jefoR+pkVh89gQjCtEc5nYbRtmKDHaDdm4wpKMz7Q4coWlJw984iOm6cPw36+wHTAF4xLZaylwSpBdAEF4QytmyMfH56GjyolnHo3Pkg7ACxYfW/94/LleAAAA//8DAH4R1WvfljwPAAAAAElFTkSuQmCC";
@@ -1456,6 +1897,5 @@ require("src/main.js");
 <p>
 Use the arrow keys to run around.
 </p>
-<p id="myScore">HELLO</p>
 </body>
 </html>
