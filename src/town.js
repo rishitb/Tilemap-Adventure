@@ -4,6 +4,7 @@ var PlayerSpeed = 4.0; //tiles per second
 var score=0;
 var seconds = 30;
 var remainingSeconds;
+var command;
 
 var Tilemap = require('sald:Tilemap.js');
 var sprite = require('sald:Sprite.js'); 
@@ -20,7 +21,11 @@ var heroSprite = new sprite(heroImg,
  {'walk' : {
 	  x:0,y:0,
 	  width:20,height:20,
-	  size:3 }
+	  size:3 },
+  'idle' : {
+	  x:0,y:0,
+	  width:20,height:20,
+	  size:1 }
 	  });
 
 var coinsImg=require('../img/coins.png');
@@ -69,8 +74,8 @@ var player = {
 	frame: 0,
 };
 
-var x1,y1,x2,y2,x3,y3;
-var coin1Rect,coin2Rect,coin3Rect;
+var x1,y1,x2,y2;
+var coin1Rect,coin2Rect;
 //var coin1=new GameObject(x1,y1,40,44,{ x : 0, y : 0 });
 
 
@@ -98,20 +103,8 @@ function GetRandomCoin2()
 				console.log(x2+","+y2);
 }
 
-function GetRandomCoin3()
-{
-	x3=Math.floor((Math.random() * 20) + (-5));
-	y3=Math.floor((Math.random() * 20) + (-5));
-	coin3Rect={
-				min:{x: x3-0.4, y: y3-0.4},
-				max:{x: y3+0.4, y: y3+0.4}			
-				};
-				console.log(x3+","+y3);		
-}
-
-			GetRandomCoin1();
-			GetRandomCoin2();
-			GetRandomCoin3();		//Calling once to get some initial random positions for coins
+			GetRandomCoin1();	//Calling once to get some initial random positions for coins
+			GetRandomCoin2();					
 			
 function secondsPassed() {
     	if (seconds < 10) {
@@ -121,11 +114,11 @@ function secondsPassed() {
    	 	if (seconds == 0) {
       	  clearInterval(countdownTimer);
 		  alert("ITS OVER! Your Score: "+score);
-		  close();
+		  location.reload();
     	} else {
         	seconds--;
    	 		}
-		console.log("Sec: "+seconds);
+		//console.log("Sec: "+seconds);
 	}
  
 	var countdownTimer=setInterval(secondsPassed, 1000);
@@ -157,8 +150,17 @@ function draw() {
 	//draw tilemap
 	tmap.draw(camera);
 	
-	//draw player	
-	heroSprite.draw('walk', player.x,player.y,0,1,1,0.5,0.5);
+	//draw player
+	(function draw_player(){
+	if (command.x != 0.0 || command.y != 0.0) {	
+		console.log("Moving");
+		heroSprite.draw('walk', player.x,player.y,0,1,1,0.5,0.5);
+	}
+	else{
+		console.log("Not moving");
+		heroSprite.draw('idle', player.x,player.y,0,1,1,0.5,0.5);
+	}
+	})();
 	
 	//draw houses
 	(function draw_houses(){
@@ -173,7 +175,6 @@ function draw() {
 	//draw coins
 	coinSprite.draw('spin',x1,y1,0,0.7,0.7,0.5,0.5);	
 	coinSprite.draw('spin',x2,y2,0,0.7,0.7,0.5,0.5);
-	coinSprite.draw('spin',x3,y3,0,0.7,0.7,0.5,0.5);
 
 	//Display Score
 	(function ShowScore()
@@ -243,13 +244,6 @@ function draw() {
 			GetRandomCoin2();
 			score+=10;
 	}
-	
-	if(col.rectangleRectangle(coin3Rect,playerRect)){
-			console.log("Pickup 3");
-			coinSound.play();
-			GetRandomCoin3();
-			score+=10;
-	}
 			
 	//rounded corners:
 	ctx.setTransform(ctx.factor,0, 0,ctx.factor, 0,0);
@@ -268,7 +262,7 @@ function draw() {
 }
 
 function update(elapsed) {
-	var command = {
+	command = {
 		x:0.0,
 		y:0.0
 	};
@@ -280,8 +274,7 @@ function update(elapsed) {
 	if (keys['DOWN']) command.y -= 1.0;
 	if (keys['UP']) command.y += 1.0;
 	
-	if (command.x != 0.0 || command.y != 0.0) {
-		heroSprite.draw('walk', player.x,player.y,0,1,1,0.5,0.5);
+	if (command.x != 0.0 || command.y != 0.0) {	
 		var len = Math.sqrt(command.x * command.x + command.y * command.y);
 		command.x /= len;
 		command.y /= len;
@@ -295,10 +288,8 @@ function update(elapsed) {
 		
 	} else {
 		//player is stopped:
-		//heroSprite.draw('idle', player.x,player.y,0,1,1,0.5,0.5);
-		heroSprite.animators['walk'].stop();
+		//console.log("Not moving");
 	}
-
 	//pan camera if player is within 3 tiles of the edge:
 	camera.x = Math.max(camera.x, player.x - (320 / TileSize / 2 - 3));
 	camera.x = Math.min(camera.x, player.x + (320 / TileSize / 2 - 3));
